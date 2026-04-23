@@ -1,283 +1,319 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Layout, 
-  Target, 
-  Lightbulb, 
-  Award, 
-  ListChecks, 
-  ArrowRight, 
-  Image as ImageIcon, 
-  MessageSquare, 
-  MousePointer2, 
-  Copy, 
-  CheckCircle2,
-  ChevronRight
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>랜딩페이지 기획 마스터</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .input-active { border-color: #3b82f6; background-color: #eff6ff; }
+        .preview-active { ring: 4px; ring-color: #60a5fa; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900">
 
-const App = () => {
-  const [formData, setFormData] = useState({
-    heroHeadline: "당신의 비즈니스를 혁신하는 한 문장",
-    heroSub: "이곳에 서비스의 핵심 가치를 설명하는 매력적인 부제목을 입력하세요.",
-    heroCta: "지금 시작하기",
-    heroImage: "전문적이고 신뢰감 있는 비즈니스 이미지",
-    problem: "1. 높은 비용 문제\n2. 복잡한 사용법\n3. 기술 지원의 부재",
-    solution: "우리의 서비스는 AI 기반 자동화로 비용을 70% 절감하고 누구나 쉽게 사용할 수 있는 UX를 제공합니다.",
-    authority: "10년 경력의 마케팅 전문가 팀, 500개 이상의 프로젝트 성공 사례 보유.",
-    programs: "1. 베이직 코스: 기초 다지기\n2. 프로 코스: 실무 적용\n3. 마스터 코스: 1:1 컨설팅",
-    process: "단계 1: 상담 신청 -> 단계 2: 맞춤형 전략 수립 -> 단계 3: 실행 및 최적화",
-    gallery: "현장 활동 사진, 팀원 협업 모습, 사용 중인 대시보드 화면",
-    socialProof: "사용자 만족도 4.9/5.0, '이 서비스를 통해 매출이 200% 성장했습니다' - 김대표",
-    finalCta: "지금 무료로 상담받고 비즈니스 성장을 시작하세요!"
-  });
+<div class="flex flex-col md:flex-row h-screen overflow-hidden">
+    <!-- Sidebar: Inputs -->
+    <aside class="w-full md:w-[400px] lg:w-[450px] bg-white border-r border-gray-200 h-screen overflow-y-auto p-6 custom-scrollbar flex-shrink-0">
+        <header class="mb-8">
+            <h1 class="text-2xl font-black text-gray-900 flex items-center gap-2">
+                <i data-lucide="layout" class="text-blue-600"></i>
+                기획 마스터
+            </h1>
+            <p class="text-gray-500 text-sm mt-2">각 섹션을 입력하면 우측에 실시간으로 반영됩니다.</p>
+        </header>
 
-  const [copied, setCopied] = useState(false);
-  const [activeSection, setActiveSection] = useState('hero');
+        <div id="input-container" class="space-y-6">
+            <!-- Inputs will be generated here -->
+        </div>
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+        <!-- Buttons Container -->
+        <div class="sticky bottom-0 bg-white pt-6 pb-2 mt-8 space-y-3 border-t border-gray-100">
+            <button onclick="copyPrompt()" id="copy-btn" class="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg">
+                <i data-lucide="copy" size="20"></i>
+                <span>AI 프롬프트 복사</span>
+            </button>
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="downloadPrompt()" class="flex items-center justify-center gap-2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-all">
+                    <i data-lucide="file-text" size="18"></i> .txt 다운로드
+                </button>
+                <button onclick="downloadJson()" class="flex items-center justify-center gap-2 py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition-all">
+                    <i data-lucide="file-json" size="18"></i> .json 내보내기
+                </button>
+            </div>
+            <div id="toast" class="hidden text-center text-sm font-bold text-green-600 bg-green-50 py-2 rounded-lg">복사되었습니다!</div>
+        </div>
+    </aside>
 
-  const generatePrompt = () => {
-    return `당신은 전문 랜딩페이지 기획자이자 카피라이터입니다. 아래 제공된 [섹션별 기획 데이터]를 바탕으로, 고객의 전환을 유도하는 매력적이고 논리적인 랜딩페이지 상세 기획안과 최종 카피를 작성해주세요.
+    <!-- Main: Preview -->
+    <main class="flex-grow h-screen overflow-y-auto bg-gray-100 p-4 md:p-10 custom-scrollbar">
+        <div class="max-w-3xl mx-auto space-y-12 pb-20">
+            
+            <!-- Hero Preview -->
+            <section id="preview-hero" class="bg-white p-12 rounded-3xl shadow-sm text-center border-4 border-transparent transition-all">
+                <span class="text-blue-600 font-bold text-sm tracking-widest uppercase mb-4 block">New Launching</span>
+                <h1 id="view-heroHeadline" class="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight whitespace-pre-wrap"></h1>
+                <p id="view-heroSub" class="text-xl text-gray-600 mb-10 max-w-xl mx-auto leading-relaxed"></p>
+                <div class="flex flex-col items-center gap-4">
+                    <button id="view-heroCta" class="bg-blue-600 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl"></button>
+                    <div id="view-heroImage" class="mt-8 w-full h-48 bg-gray-100 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 italic px-4 text-center"></div>
+                </div>
+            </section>
+
+            <!-- Problem Preview -->
+            <section id="preview-problem" class="bg-slate-900 text-white p-12 rounded-3xl shadow-sm transition-all">
+                <h2 class="text-2xl font-bold mb-8 flex items-center gap-2 text-red-400">
+                    <i data-lucide="target"></i> 핵심 고민 (Problem)
+                </h2>
+                <div id="view-problem" class="grid gap-4 opacity-80 whitespace-pre-wrap leading-loose"></div>
+            </section>
+
+            <!-- Solution & Authority -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <section id="preview-solution" class="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-blue-500 transition-all">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600">
+                        <i data-lucide="lightbulb"></i> 해결책 (Solution)
+                    </h3>
+                    <p id="view-solution" class="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm"></p>
+                </section>
+                <section id="preview-authority" class="bg-white p-8 rounded-3xl shadow-sm border-t-8 border-amber-500 transition-all">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2 text-amber-600">
+                        <i data-lucide="award"></i> 전문가 권위 (Authority)
+                    </h3>
+                    <p id="view-authority" class="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm"></p>
+                </section>
+            </div>
+
+            <!-- Program & Process -->
+            <section id="preview-programs" class="bg-white p-12 rounded-3xl shadow-sm transition-all">
+                <div class="mb-10">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-900">운영 프로그램 (Program)</h3>
+                    <div id="view-programs" class="bg-gray-50 p-6 rounded-2xl whitespace-pre-wrap text-gray-600 border border-gray-100 italic text-sm"></div>
+                </div>
+                <div id="preview-process">
+                    <h3 class="text-2xl font-bold mb-6 text-gray-900">진행 단계 (Process)</h3>
+                    <div id="view-process" class="flex flex-wrap items-center gap-4 text-sm font-medium"></div>
+                </div>
+            </section>
+
+            <!-- Gallery & Proof -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <section id="preview-gallery" class="bg-white p-8 rounded-3xl shadow-sm transition-all">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="image" class="text-purple-500"></i> 시각적 활동
+                    </h3>
+                    <div id="view-gallery" class="p-4 bg-gray-50 rounded-xl text-xs text-gray-500 italic border border-gray-100"></div>
+                </section>
+                <section id="preview-socialProof" class="bg-white p-8 rounded-3xl shadow-sm transition-all">
+                    <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+                        <i data-lucide="check-circle-2" class="text-green-500"></i> 신뢰 데이터
+                    </h3>
+                    <p id="view-socialProof" class="text-gray-700 text-sm leading-relaxed italic border-l-4 border-green-500 pl-4"></p>
+                </section>
+            </div>
+
+            <!-- Final CTA -->
+            <section id="preview-finalCta" class="bg-blue-600 p-12 rounded-3xl shadow-2xl text-center text-white transition-all">
+                <h2 id="view-finalCta" class="text-3xl font-black mb-6 leading-tight whitespace-pre-wrap"></h2>
+                <button class="bg-white text-blue-600 px-12 py-5 rounded-full text-xl font-black shadow-lg hover:scale-105 transition-transform">
+                    지금 바로 상담 신청하기
+                </button>
+            </section>
+
+        </div>
+    </main>
+</div>
+
+<script>
+    // Initial State
+    const state = {
+        heroHeadline: "당신의 비즈니스를 혁신하는 한 문장",
+        heroSub: "이곳에 서비스의 핵심 가치를 설명하는 매력적인 부제목을 입력하세요.",
+        heroCta: "지금 시작하기",
+        heroImage: "전문적이고 신뢰감 있는 비즈니스 이미지",
+        problem: "1. 높은 비용 문제\n2. 복잡한 사용법\n3. 기술 지원의 부재",
+        solution: "우리의 서비스는 AI 기반 자동화로 비용을 70% 절감하고 누구나 쉽게 사용할 수 있는 UX를 제공합니다.",
+        authority: "10년 경력의 마케팅 전문가 팀, 500개 이상의 프로젝트 성공 사례 보유.",
+        programs: "1. 베이직 코스: 기초 다지기\n2. 프로 코스: 실무 적용\n3. 마스터 코스: 1:1 컨설팅",
+        process: "단계 1: 상담 신청 -> 단계 2: 맞춤형 전략 수립 -> 단계 3: 실행 및 최적화",
+        gallery: "현장 활동 사진, 팀원 협업 모습, 사용 중인 대시보드 화면",
+        socialProof: "사용자 만족도 4.9/5.0, '이 서비스를 통해 매출이 200% 성장했습니다' - 김대표",
+        finalCta: "지금 무료로 상담받고 비즈니스 성장을 시작하세요!"
+    };
+
+    const inputFields = [
+        { label: "1. Hero 헤드라인", name: "heroHeadline", icon: "mouse-pointer-2", type: "text" },
+        { label: "Hero 부제목", name: "heroSub", icon: "message-square" },
+        { label: "CTA 버튼 텍스트", name: "heroCta", icon: "arrow-right", type: "text" },
+        { label: "이미지 컨셉", name: "heroImage", icon: "image", type: "text" },
+        { label: "2. Problem (페인 포인트)", name: "problem", icon: "target" },
+        { label: "3. Solution (해결책)", name: "solution", icon: "lightbulb" },
+        { label: "4. Authority (신뢰/이력)", name: "authority", icon: "award" },
+        { label: "5. Program (운영 리스트)", name: "programs", icon: "list-checks" },
+        { label: "6. Process (진행 가이드)", name: "process", icon: "chevron-right" },
+        { label: "7. Gallery (시각 자산)", name: "gallery", icon: "image" },
+        { label: "8. Social Proof (사회적 증거)", name: "socialProof", icon: "check-circle-2" },
+        { label: "9. Final CTA (마지막 유도)", name: "finalCta", icon: "mouse-pointer-2", type: "text" }
+    ];
+
+    function init() {
+        const container = document.getElementById('input-container');
+        
+        inputFields.forEach(field => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'mb-6 p-4 rounded-xl border-2 border-gray-100 transition-all';
+            wrapper.id = `wrapper-${field.name}`;
+
+            const labelWrap = document.createElement('div');
+            labelWrap.className = 'flex items-center gap-2 mb-2';
+            labelWrap.innerHTML = `<i data-lucide="${field.icon}" class="w-5 h-5 text-gray-400"></i><label class="font-bold text-gray-700 text-sm">${field.label}</label>`;
+            
+            let input;
+            if (field.type === "text") {
+                input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'w-full p-3 rounded-lg border border-gray-200 focus:outline-none text-sm';
+            } else {
+                input = document.createElement('textarea');
+                input.className = 'w-full p-3 rounded-lg border border-gray-200 focus:outline-none min-h-[80px] text-sm';
+            }
+            
+            input.value = state[field.name];
+            input.name = field.name;
+            
+            input.oninput = (e) => {
+                state[field.name] = e.target.value;
+                renderPreview();
+            };
+
+            input.onfocus = () => {
+                document.querySelectorAll('#input-container > div').forEach(el => el.classList.remove('input-active'));
+                wrapper.classList.add('input-active');
+                highlightPreview(field.name);
+            };
+
+            wrapper.appendChild(labelWrap);
+            wrapper.appendChild(input);
+            container.appendChild(wrapper);
+        });
+
+        lucide.createIcons();
+        renderPreview();
+    }
+
+    function renderPreview() {
+        // Sync Text Content
+        Object.keys(state).forEach(key => {
+            const el = document.getElementById(`view-${key}`);
+            if (el) {
+                if (key === 'process') {
+                    renderProcessSteps(el, state[key]);
+                } else if (key === 'heroImage') {
+                    el.textContent = `[Image: ${state[key]}]`;
+                } else {
+                    el.textContent = state[key];
+                }
+            }
+        });
+    }
+
+    function renderProcessSteps(container, text) {
+        container.innerHTML = '';
+        const steps = text.split('->');
+        steps.forEach((step, idx) => {
+            const stepDiv = document.createElement('div');
+            stepDiv.className = 'bg-blue-50 text-blue-700 px-4 py-2 rounded-lg border border-blue-100 shadow-sm';
+            stepDiv.textContent = step.trim();
+            container.appendChild(stepDiv);
+            
+            if (idx < steps.length - 1) {
+                const arrow = document.createElement('i');
+                arrow.setAttribute('data-lucide', 'chevron-right');
+                arrow.className = 'text-gray-300 w-4 h-4';
+                container.appendChild(arrow);
+            }
+        });
+        lucide.createIcons();
+    }
+
+    function highlightPreview(fieldName) {
+        // Reset all highlights
+        document.querySelectorAll('main section').forEach(sec => {
+            sec.classList.remove('border-blue-400', 'ring-4', 'ring-blue-100');
+        });
+
+        let targetId = `preview-${fieldName}`;
+        if (fieldName.startsWith('hero')) targetId = 'preview-hero';
+        if (fieldName === 'programs' || fieldName === 'process') targetId = 'preview-programs';
+        
+        const target = document.getElementById(targetId);
+        if (target) {
+            target.classList.add('border-blue-400', 'ring-4', 'ring-blue-100');
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }
+
+    function generatePromptText() {
+        return `당신은 전문 랜딩페이지 기획자이자 카피라이터입니다. 아래 제공된 [섹션별 기획 데이터]를 바탕으로, 고객의 전환을 유도하는 매력적이고 논리적인 랜딩페이지 상세 기획안과 최종 카피를 작성해주세요.
 
 ### [섹션별 기획 데이터]
 1. Hero:
-- 헤드라인: ${formData.heroHeadline}
-- 부제목: ${formData.heroSub}
-- 버튼(CTA): ${formData.heroCta}
-- 이미지 컨셉: ${formData.heroImage}
+- 헤드라인: ${state.heroHeadline}
+- 부제목: ${state.heroSub}
+- 버튼(CTA): ${state.heroCta}
+- 이미지 컨셉: ${state.heroImage}
 
-2. Problem (페인 포인트):
-${formData.problem}
-
-3. Solution (해결책/제품 정보):
-${formData.solution}
-
-4. Authority (전문가 권위/이력):
-${formData.authority}
-
-5. Program (운영 프로그램):
-${formData.programs}
-
-6. Process (진행 단계):
-${formData.process}
-
-7. Gallery (시각적 자산):
-${formData.gallery}
-
-8. Social Proof (사회적 증거):
-${formData.socialProof}
-
-9. Final CTA (최종 제안):
-${formData.finalCta}
+2. Problem: ${state.problem}
+3. Solution: ${state.solution}
+4. Authority: ${state.authority}
+5. Program: ${state.programs}
+6. Process: ${state.process}
+7. Gallery: ${state.gallery}
+8. Social Proof: ${state.socialProof}
+9. Final CTA: ${state.finalCta}
 
 ### 요청 사항:
-- 각 섹션에 맞는 심리학적 트리거(손실 회피, 권위의 법칙 등)를 적용한 카피를 제안해주세요.
-- 전체적인 디자인 톤앤매너와 레이아웃 배치 전략을 상세히 설명해주세요.
-- 모바일 환경에서도 최적화된 가독성을 가질 수 있도록 짧고 강렬한 문장을 사용해주세요.`;
-  };
-
-  const copyToClipboard = () => {
-    const text = generatePrompt();
-    const textArea = document.createElement("textarea");
-    textArea.value = text;
-    document.body.appendChild(textArea);
-    textArea.select();
-    try {
-      document.execCommand('copy');
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('복사 실패:', err);
+- 각 섹션에 맞는 심리학적 트리거를 적용한 카위와 디자인 전략을 상세히 설명해주세요.`;
     }
-    document.body.removeChild(textArea);
-  };
 
-  const InputSection = ({ label, name, icon: Icon, placeholder, type = "textarea" }) => (
-    <div className={`mb-6 p-4 rounded-xl border-2 transition-all ${activeSection === name ? 'border-blue-500 bg-blue-50' : 'border-gray-100 bg-white'}`}
-         onFocus={() => setActiveSection(name)}>
-      <div className="flex items-center gap-2 mb-2">
-        <Icon className={`w-5 h-5 ${activeSection === name ? 'text-blue-500' : 'text-gray-400'}`} />
-        <label className="font-bold text-gray-700">{label}</label>
-      </div>
-      {type === "textarea" ? (
-        <textarea
-          name={name}
-          value={formData[name]}
-          onChange={handleInputChange}
-          placeholder={placeholder}
-          className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-transparent min-h-[80px] text-sm"
-        />
-      ) : (
-        <input
-          type="text"
-          name={name}
-          value={formData[name]}
-          onChange={handleInputChange}
-          placeholder={placeholder}
-          className="w-full p-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-blue-400 focus:border-transparent text-sm"
-        />
-      )}
-    </div>
-  );
+    function copyPrompt() {
+        const text = generatePromptText();
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textArea);
 
-  return (
-    <div className="min-h-screen bg-gray-50 flex flex-col md:flex-row">
-      {/* Sidebar - Inputs */}
-      <div className="w-full md:w-2/5 h-screen overflow-y-auto p-6 bg-white border-r border-gray-200 custom-scrollbar">
-        <div className="mb-8">
-          <h1 className="text-2xl font-black text-gray-900 flex items-center gap-2">
-            <Layout className="text-blue-600" />
-            랜딩페이지 기획 마스터
-          </h1>
-          <p className="text-gray-500 text-sm mt-2">각 섹션의 내용을 입력하면 우측에 실시간으로 반영됩니다.</p>
-        </div>
+        const toast = document.getElementById('toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 2000);
+    }
 
-        <InputSection label="1. Hero 헤드라인" name="heroHeadline" icon={MousePointer2} placeholder="가장 눈에 띄는 제목" type="text" />
-        <InputSection label="Hero 부제목" name="heroSub" icon={MessageSquare} placeholder="핵심 가치 설명" />
-        <div className="grid grid-cols-2 gap-4">
-          <InputSection label="CTA 버튼 텍스트" name="heroCta" icon={ArrowRight} placeholder="버튼 문구" type="text" />
-          <InputSection label="이미지 컨셉" name="heroImage" icon={ImageIcon} placeholder="이미지 묘사" type="text" />
-        </div>
-        
-        <InputSection label="2. Problem (페인 포인트)" name="problem" icon={Target} placeholder="타겟 고객의 고민들을 입력하세요" />
-        <InputSection label="3. Solution (해결책)" name="solution" icon={Lightbulb} placeholder="당신만의 차별화된 해결책" />
-        <InputSection label="4. Authority (신뢰/이력)" name="authority" icon={Award} placeholder="숫자 중심의 성과와 이력" />
-        <InputSection label="5. Program (운영 리스트)" name="programs" icon={ListChecks} placeholder="제공하는 프로그램 목록" />
-        <InputSection label="6. Process (진행 가이드)" name="process" icon={ChevronRight} placeholder="상담부터 완료까지의 단계" />
-        <InputSection label="7. Gallery (시각 자산)" name="gallery" icon={ImageIcon} placeholder="어떤 이미지를 배치할지 설명" />
-        <InputSection label="8. Social Proof (사회적 증거)" name="socialProof" icon={CheckCircle2} placeholder="후기, 만족도, 인증 데이터" />
-        <InputSection label="9. Final CTA (마지막 유도)" name="finalCta" icon={MousePointer2} placeholder="강력한 마지막 제안 문구" type="text" />
+    function downloadFile(content, fileName, contentType) {
+        const a = document.createElement("a");
+        const file = new Blob([content], { type: contentType });
+        a.href = URL.createObjectURL(file);
+        a.download = fileName;
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
 
-        <div className="mt-8 sticky bottom-0 bg-white py-4 border-t border-gray-100">
-          <button
-            onClick={copyToClipboard}
-            className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-bold text-white transition-all transform active:scale-95 shadow-lg ${copied ? 'bg-green-500' : 'bg-blue-600 hover:bg-blue-700'}`}
-          >
-            {copied ? <CheckCircle2 /> : <Copy />}
-            {copied ? '프롬프트 복사 완료!' : 'AI 프롬프트 생성 및 복사'}
-          </button>
-        </div>
-      </div>
+    function downloadPrompt() {
+        downloadFile(generatePromptText(), "landing-page-prompt.txt", "text/plain");
+    }
 
-      {/* Main Content - Preview */}
-      <div className="w-full md:w-3/5 h-screen overflow-y-auto p-4 md:p-10 bg-gray-100">
-        <div className="max-w-3xl mx-auto space-y-12">
-          
-          {/* Hero Section Preview */}
-          <section className={`bg-white p-12 rounded-3xl shadow-sm text-center border-4 transition-all ${activeSection.startsWith('hero') ? 'border-blue-400 ring-4 ring-blue-100' : 'border-transparent'}`}>
-            <span className="text-blue-600 font-bold text-sm tracking-widest uppercase mb-4 block">New Launching</span>
-            <h1 className="text-4xl md:text-5xl font-black text-gray-900 mb-6 leading-tight whitespace-pre-wrap">{formData.heroHeadline}</h1>
-            <p className="text-xl text-gray-600 mb-10 max-w-xl mx-auto leading-relaxed">{formData.heroSub}</p>
-            <div className="flex flex-col items-center gap-4">
-              <button className="bg-blue-600 text-white px-10 py-4 rounded-full text-lg font-bold shadow-xl hover:bg-blue-700 transition-colors">
-                {formData.heroCta}
-              </button>
-              <div className="mt-8 w-full h-48 bg-gray-100 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-300 text-gray-400 italic">
-                [Image: {formData.heroImage}]
-              </div>
-            </div>
-          </section>
+    function downloadJson() {
+        downloadFile(JSON.stringify(state, null, 2), "landing-page-data.json", "application/json");
+    }
 
-          {/* Problem Section Preview */}
-          <section className={`bg-slate-900 text-white p-12 rounded-3xl shadow-sm transition-all ${activeSection === 'problem' ? 'ring-4 ring-blue-400' : ''}`}>
-            <h2 className="text-2xl font-bold mb-8 flex items-center gap-2">
-              <Target className="text-red-400" /> 혹시 이런 고민을 하고 계신가요?
-            </h2>
-            <div className="grid gap-4 opacity-80 whitespace-pre-wrap leading-loose">
-              {formData.problem}
-            </div>
-          </section>
-
-          {/* Solution & Authority Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <section className={`bg-white p-8 rounded-3xl shadow-sm border-t-8 border-blue-500 transition-all ${activeSection === 'solution' ? 'ring-4 ring-blue-400' : ''}`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600">
-                <Lightbulb /> The Solution
-              </h3>
-              <p className="text-gray-700 leading-relaxed">{formData.solution}</p>
-            </section>
-            <section className={`bg-white p-8 rounded-3xl shadow-sm border-t-8 border-amber-500 transition-all ${activeSection === 'authority' ? 'ring-4 ring-blue-400' : ''}`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-amber-600">
-                <Award /> Authority
-              </h3>
-              <p className="text-gray-700 leading-relaxed">{formData.authority}</p>
-            </section>
-          </div>
-
-          {/* Program & Process Preview */}
-          <section className={`bg-white p-12 rounded-3xl shadow-sm transition-all ${activeSection === 'programs' || activeSection === 'process' ? 'ring-4 ring-blue-400' : ''}`}>
-             <div className="mb-10">
-               <h3 className="text-2xl font-bold mb-6 text-gray-900">Program List</h3>
-               <div className="bg-gray-50 p-6 rounded-2xl whitespace-pre-wrap text-gray-600 border border-gray-100 italic">
-                {formData.programs}
-               </div>
-             </div>
-             <div>
-               <h3 className="text-2xl font-bold mb-6 text-gray-900">Step by Step</h3>
-               <div className="flex flex-wrap items-center gap-4 text-sm font-medium">
-                  {formData.process.split('->').map((step, idx) => (
-                    <React.Fragment key={idx}>
-                      <div className="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg border border-blue-100">
-                        {step.trim()}
-                      </div>
-                      {idx < formData.process.split('->').length - 1 && <ChevronRight className="text-gray-300" />}
-                    </React.Fragment>
-                  ))}
-               </div>
-             </div>
-          </section>
-
-          {/* Gallery & Proof Preview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-             <section className={`bg-white p-8 rounded-3xl shadow-sm transition-all ${activeSection === 'gallery' ? 'ring-4 ring-blue-400' : ''}`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <ImageIcon className="text-purple-500" /> 시각적 활동
-              </h3>
-              <div className="p-4 bg-gray-50 rounded-xl text-xs text-gray-500 italic">
-                {formData.gallery}
-              </div>
-            </section>
-            <section className={`bg-white p-8 rounded-3xl shadow-sm transition-all ${activeSection === 'socialProof' ? 'ring-4 ring-blue-400' : ''}`}>
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" /> 신뢰 데이터
-              </h3>
-              <p className="text-gray-700 text-sm leading-relaxed italic border-l-4 border-green-500 pl-4">
-                "{formData.socialProof}"
-              </p>
-            </section>
-          </div>
-
-          {/* Final CTA Preview */}
-          <section className={`bg-blue-600 p-12 rounded-3xl shadow-2xl text-center text-white transition-all ${activeSection === 'finalCta' ? 'ring-4 ring-yellow-400' : ''}`}>
-            <h2 className="text-3xl font-black mb-6 leading-tight">{formData.finalCta}</h2>
-            <button className="bg-white text-blue-600 px-12 py-5 rounded-full text-xl font-black shadow-lg hover:bg-gray-100 transform hover:scale-105 transition-all">
-              {formData.heroCta} — 지금 바로 신청
-            </button>
-            <p className="mt-6 text-blue-100 text-sm opacity-80">이미 1,200명 이상의 비즈니스 파트너가 함께하고 있습니다.</p>
-          </section>
-
-        </div>
-      </div>
-      
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-      `}</style>
-    </div>
-  );
-};
-
-export default App;
+    window.onload = init;
+</script>
+</body>
+</html>
